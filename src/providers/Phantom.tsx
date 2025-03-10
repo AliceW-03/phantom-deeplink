@@ -15,7 +15,12 @@ const initialState: Pick<PhantomContextType, 'connected' | 'publicKey'> = {
   publicKey: '',
 };
 // Create a context
-const PhantomContext = createContext<PhantomContextType | null>(null);
+const PhantomContext = createContext<PhantomContextType>({
+  connected: false,
+  publicKey: '',
+  connect: () => { },
+  disconnect: () => { }
+});
 
 // Create a provider component
 export const PhantomProvider = ({ children }: PropsWithChildren) => {
@@ -28,14 +33,14 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
   // Define any functions to update the state 
   const connect = async () => {
     if (isMobile) {
-      return await adapter.current.connect()
-    } else {
       linkAdapter.current.connect()
+    } else {
+      await adapter.current.connect()
+      setState({
+        publicKey: adapter.current.publicKey?.toString() || '',
+        connected: true,
+      });
     }
-    setState({
-      publicKey: adapter.current.publicKey?.toString() || '',
-      connected: true,
-    });
   };
 
   const disconnect = () => {

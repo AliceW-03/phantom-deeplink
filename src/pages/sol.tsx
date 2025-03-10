@@ -1,14 +1,18 @@
-// import { useWallet } from "@solana/wallet-adapter-react"
-import { useWalletModal } from "@solana/wallet-adapter-react-ui"
+// import { useWallet } from "@solana/wallet-adapter-react" 
+import { usePhantom } from "../providers/Phantom"
 
 export default function Page() {
-  // const { publicKey, connect, disconnect, select, wallet, wallets, connected } = useWallet() 
+  const { connect, publicKey, connected } = usePhantom()
   return <>
-    {/* {connected && <div>
-      <p>Public Key: {publicKey?.toBase58()}</p>
-      <p>Wallet: {wallet?.adapter.name}</p>
+    {connected && <div>
+      <p>Public Key: {publicKey}</p>
     </div>}
-    <div>
+    <button onClick={() => {
+      connect()
+    }}>
+      Connect
+    </button>
+    {/*  <div>
       {wallets.map((wallet) => (
         <button onClick={() => {
           select(wallet.adapter.name)
