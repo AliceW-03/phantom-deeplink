@@ -5,8 +5,15 @@ export interface ConnectCallbackParamsError {
 
 export interface ConnectCallbackParams {
   phantom_encryption_public_key: string
-  nonce: string
   data: string
+  nonce: string
+}
+
+// 解密后的数据接口
+export interface DecryptedConnectData {
+  public_key: string
+  session: string
+  // 可能还有其他字段
 }
 
 export enum CustomEventName {
@@ -32,3 +39,10 @@ export const listenMethodMap = {
   connect: "connect",
   disconnect: "disconnect",
 } as const
+
+// 添加连接状态接口
+export interface ConnectionState {
+  connected: boolean
+  publicKey: string
+  session?: string
+}

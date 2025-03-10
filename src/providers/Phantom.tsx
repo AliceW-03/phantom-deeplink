@@ -49,23 +49,32 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
 
 
   useEffect(() => {
+    // 检查已存在的连接
+    if (linkAdapter.current.isConnected()) {
+      setState({
+        connected: true,
+        publicKey: linkAdapter.current.getPublicKey() || '',
+      })
+    }
+
     linkAdapter.current.on('connect', (data) => {
       setState({
         publicKey: data.toString(),
         connected: true,
-      });
+      })
     }, (error) => {
       enqueueSnackbar(error.message, {
         variant: 'error',
       })
     })
+
     setReady(true)
   }, [])
 
 
-  // useEffect(() => {
-  //   linkAdapter.current.test()
-  // }, [linkAdapter])
+  useEffect(() => {
+    linkAdapter.current.test()
+  }, [linkAdapter])
 
   if (!ready) {
     return null // 或者返回 loading 组件

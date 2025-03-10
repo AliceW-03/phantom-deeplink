@@ -19,8 +19,8 @@ export default defineConfig({
       },
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
-        name: "My Awesome App",
-        short_name: "MyApp",
+        name: "Phantom Deeplink Demo",
+        short_name: "Phantom Demo",
         description: "My Awesome App description",
         theme_color: "#ffffff",
         icons: [
@@ -35,6 +35,8 @@ export default defineConfig({
             type: "image/png",
           },
         ],
+        display: "standalone",
+        start_url: "/",
       },
     }),
   ],

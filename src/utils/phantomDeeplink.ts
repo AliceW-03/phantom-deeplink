@@ -5,6 +5,7 @@ import {
   CustomEventName,
   CustomEventDetail,
   listenMethodMap,
+  ConnectionState,
 } from "@/lib/types"
 import bs58 from "bs58"
 
@@ -15,12 +16,15 @@ interface KeyPair {
 
 export class PhantomDeeplink {
   private static KEY_STORAGE_KEY = "phantom_dapp_keypair"
+  private static SESSION_KEY = "phantom_session"
+  private static CONNECTION_KEY = "phantom_connection"
 
   // private baseUrl = "https://phantom.app/ul/v1"
   private baseUrl = "phantom://v1"
   private appUrl = "https://phantom-deeplink-delta.vercel.app"
   private keyPair: KeyPair | null = null
   private cluster: WalletAdapterNetwork
+  private connectionState: ConnectionState | null = null
 
   private methodMap = {
     [listenMethodMap.connect]: this.onConnect.bind(this),
@@ -29,8 +33,8 @@ export class PhantomDeeplink {
 
   constructor(cluster: WalletAdapterNetwork = WalletAdapterNetwork.Mainnet) {
     this.cluster = cluster
-    // 尝试从存储恢复或生成新的密钥对
     this.restoreOrGenerateKeyPair()
+    this.restoreConnectionState()
   }
 
   private restoreOrGenerateKeyPair(): void {
@@ -97,6 +101,26 @@ export class PhantomDeeplink {
     return result
   }
 
+  private restoreConnectionState(): void {
+    const stored = localStorage.getItem(PhantomDeeplink.CONNECTION_KEY)
+    if (stored) {
+      this.connectionState = JSON.parse(stored)
+    }
+  }
+
+  private saveConnectionState(state: ConnectionState): void {
+    this.connectionState = state
+    localStorage.setItem(PhantomDeeplink.CONNECTION_KEY, JSON.stringify(state))
+  }
+
+  public isConnected(): boolean {
+    return !!this.connectionState?.connected
+  }
+
+  public getPublicKey(): string | null {
+    return this.connectionState?.publicKey || null
+  }
+
   public connect(): void {
     const url = new URL(`${this.baseUrl}/connect`)
 
@@ -143,7 +167,16 @@ export class PhantomDeeplink {
           const parsed = JSON.parse(decryptedData)
           console.log("Parsed connection data:", parsed)
 
-          resolve(new PublicKey(parsed.public_key))
+          const publicKey = new PublicKey(parsed.public_key)
+
+          // 从解密的数据中获取 session
+          this.saveConnectionState({
+            connected: true,
+            publicKey: publicKey.toString(),
+            session: parsed.session, // session 在解密的数据中
+          })
+
+          resolve(publicKey)
         } catch (error) {
           console.error("Connection error:", error)
           reject(error)
@@ -224,5 +257,31 @@ export class PhantomDeeplink {
     } catch (error) {
       console.error("Decryption error:", error)
     }
+  }
+
+  public disconnect(): void {
+    localStorage.removeItem(PhantomDeeplink.CONNECTION_KEY)
+    this.connectionState = null
+    // 触发断开连接事件
+    window.dispatchEvent(new CustomEvent(CustomEventName.PHANTOM_DISCONNECTED))
+  }
+
+  // 添加签名方法
+  public async signMessage(message: string): Promise<string> {
+    if (!this.isConnected() || !this.connectionState?.session) {
+      throw new Error("Not connected")
+    }
+
+    const url = new URL(`${this.baseUrl}/signMessage`)
+    const searchParams = new URLSearchParams({
+      app_url: this.appUrl,
+      dapp_encryption_public_key: this.dappPublicKey,
+      session: this.connectionState.session,
+      message: bs58.encode(new TextEncoder().encode(message)),
+    })
+
+    window.open(`${url}?${searchParams.toString()}`, "_blank")
+    // 处理签名回调...
+    return ""
   }
 }
