@@ -9,11 +9,10 @@ export const OnConnect = () => {
 
   useEffect(() => {
     const params = parseSearchParams<ConnectCallbackParams>(searchParams)
-    const event = new CustomEvent(CustomEventName.PHANTOM_CONNECTED, {
+    const queueEvent = new CustomEvent(CustomEventName.PHANTOM_CONNECTED, {
       detail: params
     })
-    window.dispatchEvent(event)
-    // navigate("/")
+    window.dispatchEvent(queueEvent)
   }, [navigate, searchParams])
 
   return null

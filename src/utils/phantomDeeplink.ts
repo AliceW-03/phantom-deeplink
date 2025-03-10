@@ -1,8 +1,11 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base"
 import { box } from "tweetnacl"
-import { encodeBase64, decodeBase64 } from "tweetnacl-util"
 import { PublicKey } from "@solana/web3.js"
-import { CustomEventName, CustomEventDetail } from "@/lib/types"
+import {
+  CustomEventName,
+  CustomEventDetail,
+  listenMethodMap,
+} from "@/lib/types"
 import bs58 from "bs58"
 
 interface KeyPair {
@@ -16,6 +19,11 @@ export class PhantomDeeplink {
   private appUrl = "https://phantom-deeplink-delta.vercel.app"
   private keyPair: KeyPair | null = null
   private cluster: WalletAdapterNetwork
+
+  private methodMap = {
+    [listenMethodMap.connect]: this.onConnect.bind(this),
+    [listenMethodMap.disconnect]: this.onDisconnect.bind(this),
+  } as const
 
   constructor(cluster: WalletAdapterNetwork = WalletAdapterNetwork.Mainnet) {
     this.cluster = cluster
@@ -34,8 +42,10 @@ export class PhantomDeeplink {
   }
 
   private createSharedSecret(theirPublicKeyB64: string): Uint8Array {
-    const theirPublicKey = decodeBase64(theirPublicKeyB64)
-    return box.before(theirPublicKey, this.keyPair!.secretKey)
+    console.log("Creating shared secret with public key:", theirPublicKeyB64)
+    const decoded = bs58.decode(theirPublicKeyB64)
+    console.log("Decoded public key:", decoded)
+    return box.before(decoded, this.keyPair!.secretKey)
   }
 
   private decryptData(
@@ -43,9 +53,15 @@ export class PhantomDeeplink {
     nonce: string,
     sharedSecret: Uint8Array
   ): string {
+    console.log("Decrypting data:", {
+      encryptedData,
+      nonce,
+      sharedSecret: Array.from(sharedSecret),
+    })
+
     const decryptedData = box.open.after(
-      decodeBase64(encryptedData),
-      decodeBase64(nonce),
+      bs58.decode(encryptedData),
+      bs58.decode(nonce),
       sharedSecret
     )
 
@@ -54,17 +70,13 @@ export class PhantomDeeplink {
     }
 
     const decoder = new TextDecoder()
-    return decoder.decode(decryptedData)
+    const result = decoder.decode(decryptedData)
+    console.log("Decrypted result:", result)
+    return result
   }
 
   public connect(): void {
     const url = new URL(`${this.baseUrl}/connect`)
-    console.log({
-      app_url: window.location.origin,
-      dapp_encryption_public_key: this.dappPublicKey,
-      cluster: this.cluster,
-      redirect_link: this.appUrl + "/onconnect",
-    })
 
     const searchParams = new URLSearchParams({
       app_url: this.appUrl,
@@ -76,7 +88,7 @@ export class PhantomDeeplink {
     window.open(`${url}?${searchParams.toString()}`, "_blank")
   }
 
-  public onConnect(): Promise<PublicKey> {
+  private onConnect(): Promise<PublicKey> {
     return new Promise((resolve, reject) => {
       const handleConnect = (
         event: CustomEvent<CustomEventDetail<CustomEventName.PHANTOM_CONNECTED>>
@@ -87,21 +99,31 @@ export class PhantomDeeplink {
         )
 
         try {
-          console.log(event.detail)
+          const detail = event.detail
+          console.log("Received connection detail:", detail)
 
-          const { phantom_encryption_public_key, data, nonce } = event.detail
+          if ("errorCode" in detail) {
+            reject(new Error(`${detail.errorCode}: ${detail.errorMessage}`))
+            return
+          }
+
+          const { phantom_encryption_public_key, data, nonce } = detail
+          console.log("Extracted connection data:", {
+            phantom_encryption_public_key,
+            data,
+            nonce,
+          })
 
           const sharedSecret = this.createSharedSecret(
             phantom_encryption_public_key
           )
-
           const decryptedData = this.decryptData(data, nonce, sharedSecret)
-          console.log(JSON.parse(decryptedData))
+          const parsed = JSON.parse(decryptedData)
+          console.log("Parsed connection data:", parsed)
 
-          const { public_key } = JSON.parse(decryptedData)
-
-          resolve(new PublicKey(public_key))
+          resolve(new PublicKey(parsed.public_key))
         } catch (error) {
+          console.error("Connection error:", error)
           reject(error)
         }
       }
@@ -121,6 +143,30 @@ export class PhantomDeeplink {
     })
   }
 
+  private onDisconnect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      window.addEventListener(CustomEventName.PHANTOM_DISCONNECTED, () => {
+        resolve()
+      })
+    })
+  }
+
+  public async on<T extends keyof typeof this.methodMap>(
+    listenMethod: T,
+    callback: (data: Awaited<ReturnType<(typeof this.methodMap)[T]>>) => void,
+    onError?: (error: Error) => void
+  ): Promise<void> {
+    try {
+      const method = this.methodMap[listenMethod]
+      const result = (await method()) as Awaited<
+        ReturnType<(typeof this.methodMap)[T]>
+      >
+      callback(result)
+    } catch (error) {
+      console.error(error)
+      onError?.(error as Error)
+    }
+  }
   // 用于加密消息的方法
   public async encrypt(
     message: string,

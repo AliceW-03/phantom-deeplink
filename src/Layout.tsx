@@ -1,9 +1,9 @@
-import { Outlet } from "react-router"
-import { PhantomProvider } from "./providers/Phantom"
+import { Outlet } from "react-router" 
+import { SnackbarProvider } from "notistack"
 export const Layout = () => {
   return (
-    <PhantomProvider>
-      <Outlet />
-    </PhantomProvider>
+    <SnackbarProvider> 
+        <Outlet /> 
+    </SnackbarProvider>
   )
 }

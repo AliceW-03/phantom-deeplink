@@ -2,7 +2,7 @@ import React, { createContext, PropsWithChildren, useContext, useEffect, useRef,
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomDeeplink } from '../utils/phantomDeeplink';
-import { useLocation } from 'react-router';
+import { enqueueSnackbar } from 'notistack';
 type PhantomContextType = {
   connected: boolean
   publicKey: string
@@ -24,11 +24,12 @@ const PhantomContext = createContext<PhantomContextType>({
 
 // Create a provider component
 export const PhantomProvider = ({ children }: PropsWithChildren) => {
-  const [state, setState] = useState(initialState); // Initialize state
+  const [ready, setReady] = useState(false)
+  const [state, setState] = useState(initialState)
   const adapter = useRef<PhantomWalletAdapter>(new PhantomWalletAdapter())
   const linkAdapter = useRef(new PhantomDeeplink(WalletAdapterNetwork.Devnet))
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const { pathname } = useLocation()
+
   // Define any functions to update the state 
   const connect = async () => {
     if (isMobile) {
@@ -46,22 +47,24 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
     setState(initialState);
   };
 
-  const pathListener =
-    async (path: string) => {
-      if (path === "/onConnect") {
-        const publicKey = await linkAdapter.current.onConnect()
-        setState({
-          publicKey: publicKey.toString(),
-          connected: true,
-        });
-      }
-    }
 
-  useEffect(() => {
-    console.log(pathname, 'pathname');
+  useEffect(() => { 
+    linkAdapter.current.on('connect', (data) => {
+      setState({
+        publicKey: data.toString(),
+        connected: true,
+      });
+    }, (error) => {
+      enqueueSnackbar(error.message, {
+        variant: 'error',
+      })
+    })
+    setReady(true)
+  }, [])
 
-    pathListener(pathname)
-  }, [pathname])
+  if (!ready) {
+    return null // 或者返回 loading 组件
+  }
 
   return (
     <PhantomContext.Provider value={{ ...state, connect, disconnect }}>

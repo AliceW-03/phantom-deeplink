@@ -7,7 +7,7 @@ import { OnConnect } from './pages/callback/OnConnect';
 import { RouterProvider } from 'react-router'
 import { createBrowserRouter } from 'react-router'
 import eruda from 'eruda'
-
+import { PhantomProvider } from './providers/Phantom'
 eruda.init()
 function App() {
   const router = createBrowserRouter([
@@ -27,7 +27,9 @@ function App() {
     }
   ])
   return (
-    <RouterProvider router={router} />
+    <PhantomProvider>
+      <RouterProvider router={router} />
+    </PhantomProvider>
   )
 }
 

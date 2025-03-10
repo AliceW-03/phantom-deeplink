@@ -23,6 +23,7 @@
     "buffer": "^6.0.3",
     "eruda": "^3.4.1",
     "lodash": "^4.17.21",
+    "notistack": "^3.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
