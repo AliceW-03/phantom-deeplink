@@ -13,7 +13,7 @@ export const OnConnect = () => {
       detail: params
     })
     window.dispatchEvent(event)
-    navigate("/")
+    // navigate("/")
   }, [navigate, searchParams])
 
   return null

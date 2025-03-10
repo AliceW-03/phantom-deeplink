@@ -6,6 +6,9 @@ import { Layout } from './Layout';
 import { OnConnect } from './pages/callback/OnConnect';
 import { RouterProvider } from 'react-router'
 import { createBrowserRouter } from 'react-router'
+import eruda from 'eruda'
+
+eruda.init()
 function App() {
   const router = createBrowserRouter([
     {

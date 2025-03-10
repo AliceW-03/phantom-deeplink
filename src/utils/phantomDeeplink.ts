@@ -3,6 +3,7 @@ import { box } from "tweetnacl"
 import { encodeBase64, decodeBase64 } from "tweetnacl-util"
 import { PublicKey } from "@solana/web3.js"
 import { CustomEventName, CustomEventDetail } from "@/lib/types"
+import bs58 from "bs58"
 
 interface KeyPair {
   publicKey: Uint8Array
@@ -10,7 +11,8 @@ interface KeyPair {
 }
 
 export class PhantomDeeplink {
-  private baseUrl = "https://phantom.app/ul/v1"
+  // private baseUrl = "https://phantom.app/ul/v1"
+  private baseUrl = "phantom://v1"
   private appUrl = "https://phantom-deeplink-delta.vercel.app"
   private keyPair: KeyPair | null = null
   private cluster: WalletAdapterNetwork
@@ -28,7 +30,7 @@ export class PhantomDeeplink {
     if (!this.keyPair) {
       this.generateNewKeyPair()
     }
-    return encodeBase64(this.keyPair!.publicKey)
+    return bs58.encode(this.keyPair!.publicKey)
   }
 
   private createSharedSecret(theirPublicKeyB64: string): Uint8Array {
@@ -57,6 +59,13 @@ export class PhantomDeeplink {
 
   public connect(): void {
     const url = new URL(`${this.baseUrl}/connect`)
+    console.log({
+      app_url: window.location.origin,
+      dapp_encryption_public_key: this.dappPublicKey,
+      cluster: this.cluster,
+      redirect_link: this.appUrl + "/onconnect",
+    })
+
     const searchParams = new URLSearchParams({
       app_url: this.appUrl,
       dapp_encryption_public_key: this.dappPublicKey,
@@ -78,6 +87,8 @@ export class PhantomDeeplink {
         )
 
         try {
+          console.log(event.detail)
+
           const { phantom_encryption_public_key, data, nonce } = event.detail
 
           const sharedSecret = this.createSharedSecret(
@@ -85,6 +96,7 @@ export class PhantomDeeplink {
           )
 
           const decryptedData = this.decryptData(data, nonce, sharedSecret)
+          console.log(JSON.parse(decryptedData))
 
           const { public_key } = JSON.parse(decryptedData)
 

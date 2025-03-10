@@ -24,10 +24,9 @@ const PhantomContext = createContext<PhantomContextType>({
 
 // Create a provider component
 export const PhantomProvider = ({ children }: PropsWithChildren) => {
-  const network = WalletAdapterNetwork.Devnet;
   const [state, setState] = useState(initialState); // Initialize state
   const adapter = useRef<PhantomWalletAdapter>(new PhantomWalletAdapter())
-  const linkAdapter = useRef(new PhantomDeeplink(network))
+  const linkAdapter = useRef(new PhantomDeeplink(WalletAdapterNetwork.Devnet))
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const { pathname } = useLocation()
   // Define any functions to update the state 
