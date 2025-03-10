@@ -13,11 +13,11 @@ function App() {
       element: <Layout />,
       children: [
         {
-          path: '/',
+          index: true,
           element: <Sol />
         },
         {
-          path: '/onconnect',
+          path: 'onconnect',
           element: <OnConnect />
         }
       ]
