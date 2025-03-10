@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router"
 import { parseSearchParams } from "@/utils/url"
-import { ConnectCallbackParams, CustomEventName } from "@/lib/types"
+import { ConnectCallbackParams, CustomEventName } from "@/lib/types" 
 
 export const OnConnect = () => {
   const navigate = useNavigate()
@@ -14,6 +14,7 @@ export const OnConnect = () => {
     })
     window.dispatchEvent(queueEvent)
   }, [navigate, searchParams])
+
 
   return null
 } 

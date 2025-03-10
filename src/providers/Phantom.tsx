@@ -48,7 +48,7 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
   };
 
 
-  useEffect(() => { 
+  useEffect(() => {
     linkAdapter.current.on('connect', (data) => {
       setState({
         publicKey: data.toString(),
@@ -61,6 +61,11 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
     })
     setReady(true)
   }, [])
+
+
+  // useEffect(() => {
+  //   linkAdapter.current.test()
+  // }, [linkAdapter])
 
   if (!ready) {
     return null // 或者返回 loading 组件
