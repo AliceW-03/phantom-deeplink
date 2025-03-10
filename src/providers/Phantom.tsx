@@ -1,7 +1,8 @@
-import React, { createContext, PropsWithChildren, useContext, useRef, useState } from 'react';
+import React, { createContext, PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomDeeplink } from '../utils/phantomDeeplink';
+import { useLocation } from 'react-router';
 type PhantomContextType = {
   connected: boolean
   publicKey: string
@@ -23,16 +24,13 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
   const adapter = useRef<PhantomWalletAdapter>(new PhantomWalletAdapter())
   const linkAdapter = useRef(new PhantomDeeplink(network))
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const { pathname } = useLocation()
   // Define any functions to update the state 
   const connect = async () => {
     if (isMobile) {
       return await adapter.current.connect()
     } else {
-      linkAdapter.current.connect({
-        appUrl: window.location.origin,
-        redirectLink: window.location.origin + "onConnect",
-        cluster: network,
-      })
+      linkAdapter.current.connect()
     }
     setState({
       publicKey: adapter.current.publicKey?.toString() || '',
@@ -43,6 +41,23 @@ export const PhantomProvider = ({ children }: PropsWithChildren) => {
   const disconnect = () => {
     setState(initialState);
   };
+
+  const pathListener =
+    async (path: string) => {
+      if (path === "/onConnect") {
+        const publicKey = await linkAdapter.current.onConnect()
+        setState({
+          publicKey: publicKey.toString(),
+          connected: true,
+        });
+      }
+    }
+
+  useEffect(() => {
+    console.log(pathname, 'pathname');
+
+    pathListener(pathname)
+  }, [pathname])
 
   return (
     <PhantomContext.Provider value={{ ...state, connect, disconnect }}>

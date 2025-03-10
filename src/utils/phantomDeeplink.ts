@@ -1,20 +1,15 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base"
 import { box } from "tweetnacl"
 import { encodeBase64 } from "tweetnacl-util"
-
+import { PublicKey } from "@solana/web3.js"
 interface KeyPair {
   publicKey: Uint8Array
   secretKey: Uint8Array
 }
 
-interface ConnectParams {
-  appUrl: string
-  redirectLink?: string
-}
-
 export class PhantomDeeplink {
   private baseUrl = "https://phantom.app/ul/v1"
-  private appUrl = ""
+  private appUrl = "phantom-deeplink-jz5u.vercel.app"
   private keyPair: KeyPair | null = null
   private cluster: WalletAdapterNetwork
 
@@ -44,6 +39,16 @@ export class PhantomDeeplink {
       redirect_link: window.location.origin + "onConnect",
     })
     window.open(`${url}?${searchParams.toString()}`, "_blank")
+  }
+
+  public onConnect( ): Promise<PublicKey> {
+    return new Promise((resolve, reject) => {
+      window.addEventListener("message", (event) => {
+        if (event.data.type === "phantom-deeplink-connect") {
+          resolve(event.data.publicKey)
+        }
+      })
+    })
   }
 
   // public getKeyPair(): KeyPair {
