@@ -35,6 +35,8 @@ export class PhantomDeeplink {
 
   private restoreOrGenerateKeyPair(): void {
     const stored = localStorage.getItem(PhantomDeeplink.KEY_STORAGE_KEY)
+    console.log(stored)
+
     if (stored) {
       const { publicKey, secretKey } = JSON.parse(stored)
       this.keyPair = {
