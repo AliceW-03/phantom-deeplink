@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     nodePolyfills(),
     VitePWA({
-      injectRegister: "script",
       registerType: "autoUpdate",
       devOptions: {
         enabled: true,
-        type: "module",
       },
       workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],

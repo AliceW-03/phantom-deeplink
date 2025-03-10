@@ -1,4 +1,3 @@
-
 import './App.css'
 import "@solana/wallet-adapter-react-ui/styles.css"
 import Sol from './pages/sol'
@@ -8,6 +7,7 @@ import { RouterProvider } from 'react-router'
 import { createBrowserRouter } from 'react-router'
 import eruda from 'eruda'
 import { PhantomProvider } from './providers/Phantom'
+import { ReloadPrompt } from './components/ReloadPrompt'
 eruda.init()
 function App() {
   const router = createBrowserRouter([
@@ -27,9 +27,12 @@ function App() {
     }
   ])
   return (
-    <PhantomProvider>
-      <RouterProvider router={router} />
-    </PhantomProvider>
+    <>
+      <PhantomProvider>
+        <RouterProvider router={router} />
+      </PhantomProvider>
+      <ReloadPrompt />
+    </>
   )
 }
 
